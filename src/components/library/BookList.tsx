@@ -50,7 +50,7 @@ export default function BookList({ book, progress, onDelete }: BookListProps) {
           <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
             {book.title}
           </p>
-          <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="truncate text-xs text-stone-600 dark:text-zinc-400">
             {book.author}
           </p>
         </div>

@@ -64,7 +64,7 @@ export default function BookCard({ book, progress, onDelete }: BookCardProps) {
           <h3 className="line-clamp-2 text-sm font-medium leading-snug text-zinc-900 dark:text-zinc-100">
             {book.title}
           </h3>
-          <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-0.5 text-xs text-stone-600 dark:text-zinc-400">
             {book.author}
           </p>
 
@@ -76,7 +76,7 @@ export default function BookCard({ book, progress, onDelete }: BookCardProps) {
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="mt-1 text-[10px] text-zinc-400 dark:text-zinc-500">
+            <p className="mt-1 text-[10px] text-stone-500 dark:text-zinc-500">
               {Math.round(progress)}%
             </p>
           </div>

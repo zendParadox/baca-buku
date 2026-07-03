@@ -70,14 +70,14 @@ export default function ReaderSettings({ isOpen, onClose }: ReaderSettingsProps)
             <div className="p-5 space-y-7">
               {/* Font Size */}
               <section>
-                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3 block">
+                <label className="text-sm font-medium text-stone-700 dark:text-zinc-300 mb-3 block">
                   Ukuran Font
                 </label>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setFontSize(Math.max(14, settings.fontSize - 1))}
                     className="flex items-center justify-center w-8 h-8 rounded-lg
-                               bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200
+                               bg-stone-100 dark:bg-zinc-800 hover:bg-stone-200
                                dark:hover:bg-zinc-700 transition-colors text-sm font-bold"
                     aria-label="Kecilkan font"
                   >
@@ -92,25 +92,25 @@ export default function ReaderSettings({ isOpen, onClose }: ReaderSettingsProps)
                       value={settings.fontSize}
                       onChange={(e) => setFontSize(Number(e.target.value))}
                       className="w-full h-2 rounded-full appearance-none cursor-pointer
-                                 bg-zinc-200 dark:bg-zinc-700 accent-indigo-500"
+                                 bg-stone-200 dark:bg-zinc-700 accent-emerald-500"
                     />
                   </div>
                   <button
                     onClick={() => setFontSize(Math.min(28, settings.fontSize + 1))}
                     className="flex items-center justify-center w-8 h-8 rounded-lg
-                               bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200
+                               bg-stone-100 dark:bg-zinc-800 hover:bg-stone-200
                                dark:hover:bg-zinc-700 transition-colors text-sm font-bold"
                     aria-label="Perbesar font"
                   >
                     <Plus size={14} />
                   </button>
-                  <span className="text-xs text-zinc-500 w-8 text-right tabular-nums">
+                  <span className="text-xs text-stone-600 dark:text-zinc-400 w-8 text-right tabular-nums">
                     {settings.fontSize}px
                   </span>
                 </div>
                 {/* Preview */}
                 <div
-                  className="mt-3 p-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 text-center"
+                  className="mt-3 p-3 rounded-lg bg-stone-100 dark:bg-zinc-800/50 text-center"
                   style={{ fontSize: `${settings.fontSize}px` }}
                 >
                   Contoh teks
@@ -119,7 +119,7 @@ export default function ReaderSettings({ isOpen, onClose }: ReaderSettingsProps)
 
               {/* Line Height */}
               <section>
-                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3 block">
+                <label className="text-sm font-medium text-stone-700 dark:text-zinc-300 mb-3 block">
                   Spasi Baris
                 </label>
                 <div className="flex items-center gap-3">
@@ -132,10 +132,10 @@ export default function ReaderSettings({ isOpen, onClose }: ReaderSettingsProps)
                       value={settings.lineHeight}
                       onChange={(e) => setLineHeight(Number(e.target.value))}
                       className="w-full h-2 rounded-full appearance-none cursor-pointer
-                                 bg-zinc-200 dark:bg-zinc-700 accent-indigo-500"
+                                 bg-stone-200 dark:bg-zinc-700 accent-emerald-500"
                     />
                   </div>
-                  <span className="text-xs text-zinc-500 w-8 text-right tabular-nums">
+                  <span className="text-xs text-stone-600 dark:text-zinc-400 w-8 text-right tabular-nums">
                     {settings.lineHeight.toFixed(1)}
                   </span>
                 </div>
@@ -143,7 +143,7 @@ export default function ReaderSettings({ isOpen, onClose }: ReaderSettingsProps)
 
               {/* Margins / Content Width */}
               <section>
-                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3 block">
+                <label className="text-sm font-medium text-stone-700 dark:text-zinc-300 mb-3 block">
                   Lebar Konten
                 </label>
                 <div className="flex items-center gap-3">
@@ -160,10 +160,10 @@ export default function ReaderSettings({ isOpen, onClose }: ReaderSettingsProps)
                         setMargins(Math.max(5, Math.min(25, margins)));
                       }}
                       className="w-full h-2 rounded-full appearance-none cursor-pointer
-                                 bg-zinc-200 dark:bg-zinc-700 accent-indigo-500"
+                                 bg-stone-200 dark:bg-zinc-700 accent-emerald-500"
                     />
                   </div>
-                  <span className="text-xs text-zinc-500 w-16 text-right tabular-nums">
+                  <span className="text-xs text-stone-600 dark:text-zinc-400 w-16 text-right tabular-nums">
                     {400 + (25 - settings.margins) * 20}px
                   </span>
                 </div>
@@ -171,7 +171,7 @@ export default function ReaderSettings({ isOpen, onClose }: ReaderSettingsProps)
 
               {/* Font Family */}
               <section>
-                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3 block">
+                <label className="text-sm font-medium text-stone-700 dark:text-zinc-300 mb-3 block">
                   Font Family
                 </label>
                 <div className="space-y-2">
@@ -181,8 +181,8 @@ export default function ReaderSettings({ isOpen, onClose }: ReaderSettingsProps)
                       className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer
                                   transition-colors ${
                                     settings.fontFamily === font.value
-                                      ? 'bg-indigo-50 dark:bg-indigo-900/30 ring-1 ring-indigo-300 dark:ring-indigo-700'
-                                      : 'hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                                      ? 'bg-emerald-50 dark:bg-emerald-900/30 ring-1 ring-emerald-300 dark:ring-emerald-700'
+                                      : 'hover:bg-stone-100 dark:hover:bg-zinc-800'
                                   }`}
                     >
                       <input
@@ -202,7 +202,7 @@ export default function ReaderSettings({ isOpen, onClose }: ReaderSettingsProps)
                         }}
                       >
                         {settings.fontFamily === font.value && (
-                          <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                          <div className="w-2 h-2 rounded-full bg-emerald-500" />
                         )}
                       </div>
                       <span style={{ fontFamily: font.preview }} className="text-sm">
@@ -215,7 +215,7 @@ export default function ReaderSettings({ isOpen, onClose }: ReaderSettingsProps)
 
               {/* Theme */}
               <section>
-                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-3 block">
+                <label className="text-sm font-medium text-stone-700 dark:text-zinc-300 mb-3 block">
                   Tema
                 </label>
                 <div className="flex gap-3">

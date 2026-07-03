@@ -187,7 +187,7 @@ export default function UploadZone({ onUploadComplete }: Props) {
             <Loader2 className="h-10 w-10 animate-spin text-emerald-500" />
             <p className="text-sm text-zinc-600 dark:text-zinc-300">{status.message}</p>
             {status.fileName && (
-              <p className="max-w-full truncate text-xs text-zinc-400">{status.fileName}</p>
+              <p className="max-w-full truncate text-xs text-stone-500 dark:text-zinc-400">{status.fileName}</p>
             )}
           </>
         ) : status.state === 'done' ? (
@@ -201,20 +201,20 @@ export default function UploadZone({ onUploadComplete }: Props) {
           <>
             <AlertCircle className="h-10 w-10 text-red-500" />
             <p className="text-sm text-red-600 dark:text-red-400">{status.message}</p>
-            <p className="text-xs text-zinc-400">Klik untuk mencoba lagi</p>
+            <p className="text-xs text-stone-500 dark:text-zinc-400">Klik untuk mencoba lagi</p>
           </>
         ) : (
           <>
             {isDragActive ? (
               <CloudUpload className="h-10 w-10 text-emerald-500" />
             ) : (
-              <Upload className="h-10 w-10 text-zinc-400" />
+              <Upload className="h-10 w-10 text-stone-400 dark:text-zinc-500" />
             )}
             <div className="text-center">
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 {isDragActive ? 'Lepaskan file di sini' : 'Seret & lepas buku ke sini'}
               </p>
-              <p className="mt-1 text-xs text-zinc-400">
+              <p className="mt-1 text-xs text-stone-500 dark:text-zinc-400">
                 atau klik untuk memilih file · PDF, EPUB · Maks 50MB
               </p>
             </div>

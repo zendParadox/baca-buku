@@ -188,7 +188,7 @@ export default function SearchInBook({ isOpen, onClose, contentRef }: SearchInBo
           <div className="mx-auto max-w-md bg-white dark:bg-zinc-800 shadow-lg rounded-xl
                           border border-zinc-200 dark:border-zinc-700 overflow-hidden">
             <div className="flex items-center gap-2 px-3 py-2">
-              <Search size={16} className="text-zinc-400 shrink-0" />
+              <Search size={16} className="text-stone-400 dark:text-zinc-500 shrink-0" />
               <input
                 ref={inputRef}
                 type="text"
@@ -200,7 +200,7 @@ export default function SearchInBook({ isOpen, onClose, contentRef }: SearchInBo
               />
 
               {totalMatches > 0 && (
-                <span className="text-xs text-zinc-500 tabular-nums whitespace-nowrap">
+                <span className="text-xs text-stone-600 dark:text-zinc-400 tabular-nums whitespace-nowrap">
                   {currentIndex + 1} dari {totalMatches}
                 </span>
               )}

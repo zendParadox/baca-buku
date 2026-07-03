@@ -217,10 +217,10 @@ export default function BookReaderPage({
   // Loading state
   if (loading) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-zinc-950">
+      <div className="fixed inset-0 flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="animate-spin w-10 h-10 border-3 border-emerald-500 border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-sm text-zinc-500">Memuat buku...</p>
+          <p className="text-sm text-stone-600 dark:text-zinc-400">Memuat buku...</p>
         </div>
       </div>
     );
@@ -229,7 +229,7 @@ export default function BookReaderPage({
   // Book not found
   if (!book) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-zinc-950">
+      <div className="fixed inset-0 flex items-center justify-center bg-background">
         <div className="text-center">
           <p className="text-lg font-medium mb-2">Buku tidak ditemukan</p>
           <button
