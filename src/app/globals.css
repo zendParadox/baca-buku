@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Class-based dark mode (toggle via html.dark) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ── Tailwind v4 Theme Tokens ── */
 @theme inline {
   --color-background: var(--background);
