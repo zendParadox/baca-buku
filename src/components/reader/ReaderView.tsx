@@ -12,6 +12,7 @@ interface ReaderViewProps {
   totalPages: number;
   onPageChange: (page: number, percentage: number) => void;
   onReady?: (totalPages: number) => void;
+  onChaptersLoaded?: (chapters: { id: string; title: string; page: number }[]) => void;
   showUI: boolean;
 }
 
@@ -35,12 +36,14 @@ function PdfReader({
   currentPage,
   totalPages,
   onReady,
+  onChaptersLoaded,
 }: {
   book: Book;
   settings: ReaderSettings;
   currentPage: number;
   totalPages: number;
   onReady?: (totalPages: number) => void;
+  onChaptersLoaded?: (chapters: { id: string; title: string; page: number }[]) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -60,7 +63,20 @@ function PdfReader({
         const pdfjsLib = await import('pdfjs-dist');
         pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
-        const pdf = await pdfjsLib.getDocument({ data: book.file }).promise;
+        // Ensure data is a proper ArrayBuffer/Uint8Array for pdf.js
+        // IndexedDB structured clone can sometimes return non-standard types
+        let rawData: ArrayBuffer;
+        const fileData = book.file as any; // IndexedDB may return Blob or other types
+        if (fileData instanceof ArrayBuffer) {
+          rawData = fileData;
+        } else if (typeof fileData.arrayBuffer === 'function') {
+          rawData = await fileData.arrayBuffer();
+        } else {
+          // Fallback: copy into fresh ArrayBuffer to guarantee instanceof works
+          rawData = new ArrayBuffer(fileData.byteLength || fileData.size || 0);
+          new Uint8Array(rawData).set(new Uint8Array(fileData));
+        }
+        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(rawData) }).promise;
 
         if (cancelled) return;
 
@@ -69,6 +85,41 @@ function PdfReader({
         // Report total pages back to parent
         if (onReady) {
           onReady(pdf.numPages);
+        }
+
+        // Try to extract PDF outline (table of contents) for chapter nav
+        if (onChaptersLoaded) {
+          try {
+            const outline = await pdf.getOutline();
+            if (outline && outline.length > 0) {
+              const chapters: { id: string; title: string; page: number }[] = [];
+              for (const item of outline) {
+                let pageNum = 1;
+                if (item.dest) {
+                  try {
+                    let dest: any = item.dest;
+                    if (typeof dest === 'string') {
+                      dest = await pdf.getDestination(dest);
+                    }
+                    if (dest && dest[0]) {
+                      const index = await pdf.getPageIndex(dest[0]);
+                      pageNum = index + 1;
+                    }
+                  } catch { /* ignore */ }
+                }
+                chapters.push({
+                  id: item.title,
+                  title: item.title,
+                  page: pageNum,
+                });
+              }
+              if (chapters.length > 0) {
+                onChaptersLoaded(chapters);
+              }
+            }
+          } catch {
+            // PDF outline not available, that's fine
+          }
         }
 
         setLoading(false);
@@ -225,6 +276,7 @@ export default function ReaderView({
   totalPages,
   onPageChange,
   onReady,
+  onChaptersLoaded,
   showUI,
 }: ReaderViewProps) {
   const settings = useReaderStore();
@@ -238,15 +290,28 @@ export default function ReaderView({
   // Keyboard navigation
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      // ArrowRight / Space → next page
       if (e.key === 'ArrowRight' || e.key === ' ') {
         e.preventDefault();
         if (currentPage < totalPages) {
-          onPageChange(currentPage + 1, ((currentPage) / totalPages) * 100);
+          onPageChange(currentPage + 1, (currentPage / totalPages) * 100);
         }
-      } else if (e.key === 'ArrowLeft') {
+      }
+      // ArrowLeft → previous page
+      else if (e.key === 'ArrowLeft') {
         e.preventDefault();
         if (currentPage > 1) {
           onPageChange(currentPage - 1, ((currentPage - 2) / totalPages) * 100);
+        }
+      }
+      // ArrowDown / ArrowUp → scroll content vertically
+      else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        const scrollContainer = containerRef.current?.querySelector('.epub-scroll-container')
+          || containerRef.current?.querySelector('.overflow-y-auto');
+        if (scrollContainer) {
+          e.preventDefault();
+          const scrollAmount = e.key === 'ArrowDown' ? 80 : -80;
+          scrollContainer.scrollBy({ top: scrollAmount, behavior: 'smooth' });
         }
       }
     }
@@ -323,6 +388,7 @@ export default function ReaderView({
               currentPage={currentPage}
               totalPages={totalPages}
               onReady={onReady}
+              onChaptersLoaded={onChaptersLoaded}
             />
           ) : book.format === 'epub' ? (
             <EpubReader
@@ -332,6 +398,7 @@ export default function ReaderView({
               totalPages={totalPages}
               onPageChange={onPageChange}
               onReady={onReady}
+              onChaptersLoaded={onChaptersLoaded}
             />
           ) : (
             <div className="p-8 text-center opacity-60">

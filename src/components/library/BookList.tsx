@@ -71,7 +71,7 @@ export default function BookList({ book, progress, onDelete }: BookListProps) {
             />
           </div>
           <p className="mt-0.5 text-right text-[10px] text-zinc-400">
-            {progress}%
+            {Math.round(progress)}%
           </p>
         </div>
 

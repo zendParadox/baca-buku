@@ -77,7 +77,7 @@ export default function BookCard({ book, progress, onDelete }: BookCardProps) {
               />
             </div>
             <p className="mt-1 text-[10px] text-zinc-400 dark:text-zinc-500">
-              {progress}%
+              {Math.round(progress)}%
             </p>
           </div>
         </div>

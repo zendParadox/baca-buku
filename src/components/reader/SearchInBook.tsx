@@ -39,8 +39,20 @@ export default function SearchInBook({ isOpen, onClose, contentRef }: SearchInBo
 
       const container = contentRef.current;
 
-      // Use Mark.js-like manual highlighting
-      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+      // Search all text nodes in the reader area
+      const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
+        acceptNode: (node: Text) => {
+          // Skip hidden elements
+          const parent = node.parentElement;
+          if (parent) {
+            const style = window.getComputedStyle(parent);
+            if (style.display === 'none' || style.visibility === 'hidden') {
+              return NodeFilter.FILTER_REJECT;
+            }
+          }
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      });
       const textNodes: Text[] = [];
       let node: Text | null;
       while ((node = walker.nextNode() as Text | null)) {
@@ -82,7 +94,26 @@ export default function SearchInBook({ isOpen, onClose, contentRef }: SearchInBo
     (index: number) => {
       if (!matches || index < 0 || index >= matches.length) return;
       const mark = matches[index];
-      mark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      // Find the nearest scrollable parent and scroll it
+      let scrollParent: HTMLElement | null = mark.parentElement;
+      while (scrollParent) {
+        if (scrollParent.scrollHeight > scrollParent.clientHeight &&
+            (getComputedStyle(scrollParent).overflowY === 'auto' ||
+             getComputedStyle(scrollParent).overflowY === 'scroll')) {
+          break;
+        }
+        scrollParent = scrollParent.parentElement;
+      }
+
+      if (scrollParent) {
+        const markRect = mark.getBoundingClientRect();
+        const parentRect = scrollParent.getBoundingClientRect();
+        const scrollTop = scrollParent.scrollTop + markRect.top - parentRect.top - parentRect.height / 2;
+        scrollParent.scrollTo({ top: scrollTop, behavior: 'smooth' });
+      } else {
+        mark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
 
       // Flash highlight
       mark.classList.add('ring-2', 'ring-indigo-400');

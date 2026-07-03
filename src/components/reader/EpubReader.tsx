@@ -4,6 +4,12 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import type { Book, ReaderSettings } from '@/types';
 import { parseEpub, type ParsedEpub, type EpubChapter } from '@/lib/epub-parser';
 
+export interface ChapterInfo {
+  id: string;
+  title: string;
+  page: number;
+}
+
 interface EpubReaderProps {
   book: Book;
   settings: ReaderSettings;
@@ -11,6 +17,7 @@ interface EpubReaderProps {
   totalPages: number;
   onPageChange: (page: number, percentage: number) => void;
   onReady?: (totalPages: number) => void;
+  onChaptersLoaded?: (chapters: ChapterInfo[]) => void;
 }
 
 const fontFamilyMap: Record<string, string> = {
@@ -39,6 +46,7 @@ export default function EpubReader({
   totalPages,
   onPageChange,
   onReady,
+  onChaptersLoaded,
 }: EpubReaderProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const [epubData, setEpubData] = useState<ParsedEpub | null>(null);
@@ -66,6 +74,15 @@ export default function EpubReader({
           // Report total pages (chapters) back to parent
           if (onReady && data.chapters.length > 0) {
             onReady(data.chapters.length);
+          }
+
+          // Report actual chapter info to parent
+          if (onChaptersLoaded) {
+            onChaptersLoaded(data.chapters.map((ch, i) => ({
+              id: ch.id,
+              title: ch.title,
+              page: i + 1,
+            })));
           }
         }
       } catch (err) {
@@ -174,7 +191,7 @@ export default function EpubReader({
       {/* Chapter content */}
       <div
         ref={contentRef}
-        className="flex-1 overflow-y-auto px-4 py-6"
+        className="flex-1 overflow-y-auto epub-scroll-container px-4 py-6" 
         style={{
           maxWidth: `${400 + (25 - settings.margins) * 20}px`,
           margin: '0 auto',

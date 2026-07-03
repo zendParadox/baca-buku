@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!--
+    Baca Buku — Compact Mark
+    A calligraphic "B" that doubles as an open book.
+    Green #059669, brush-stroke quality.
+  -->
+  <g stroke="#059669" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Top leaf / brush flick -->
+    <path d="M 62 58 Q 52 38 42 28" stroke-width="9" />
+
+    <!-- Left vertical stroke (spine) -->
+    <path d="M 65 55 Q 58 100 65 150" stroke-width="13" />
+
+    <!-- Upper loop of B -->
+    <path d="M 65 55 C 90 42 118 50 118 72 C 118 90 95 102 65 102" stroke-width="11" />
+
+    <!-- Lower loop of B (slightly bigger) -->
+    <path d="M 65 102 C 98 92 128 108 128 132 C 128 155 100 170 65 162" stroke-width="12" />
+  </g>
+</svg>

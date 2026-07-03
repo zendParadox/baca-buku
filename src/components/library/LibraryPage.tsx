@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, Upload } from 'lucide-react';
-import { addBook as addBookToDb, getAllBooks, deleteBook } from '@/lib/db';
+import { addBook as addBookToDb, getAllBooks, deleteBook, getProgress } from '@/lib/db';
 import { useLibraryStore } from '@/lib/library-store';
 import type { Book, LibraryView, LibrarySort } from '@/types';
 import AppHeader from '@/components/layout/AppHeader';
@@ -43,11 +43,14 @@ export default function LibraryPage() {
       try {
         const allBooks = await getAllBooks();
         setBooks(allBooks);
-        // Derive progress from book metadata (percentage stored or computed)
+        // Load real progress from IndexedDB for each book
         const progressMap: Record<string, number> = {};
-        for (const b of allBooks) {
-          progressMap[b.id] = 0; // will be updated by reader
-        }
+        await Promise.all(
+          allBooks.map(async (b) => {
+            const p = await getProgress(b.id);
+            progressMap[b.id] = p?.percentage ?? 0;
+          })
+        );
         setProgress(progressMap);
       } catch {
         // IndexedDB not available

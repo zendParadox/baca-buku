@@ -39,6 +39,7 @@ export default function BookReaderPage({
   const [chapterNavOpen, setChapterNavOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [realChapters, setRealChapters] = useState<{ id: string; title: string; page: number }[]>([]);
 
   const uiTimerRef = useRef<NodeJS.Timeout | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -143,6 +144,11 @@ export default function BookReaderPage({
     }
   }, []);
 
+  // Handle real chapters from EPUB/PDF outline
+  const handleChaptersLoaded = useCallback((chapters: { id: string; title: string; page: number }[]) => {
+    setRealChapters(chapters);
+  }, []);
+
   // Save progress on unmount
   useEffect(() => {
     return () => {
@@ -188,15 +194,17 @@ export default function BookReaderPage({
     }
   }, [currentPage, totalPages, handlePageChange]);
 
-  // Generate chapters from total pages
-  const chapters = useCallback(() => {
-    const chapterCount = Math.max(1, Math.min(20, Math.ceil(totalPages / 10)));
-    return Array.from({ length: chapterCount }, (_, i) => ({
-      id: `ch-${i}`,
-      title: `Bab ${i + 1}`,
-      page: Math.max(1, Math.floor((i / chapterCount) * totalPages) + 1),
-    }));
-  }, [totalPages])();
+  // Use real chapters if available, otherwise generate from total pages
+  const chapters = realChapters.length > 0
+    ? realChapters
+    : (() => {
+        const chapterCount = Math.max(1, Math.min(20, Math.ceil(totalPages / 10)));
+        return Array.from({ length: chapterCount }, (_, i) => ({
+          id: `ch-${i}`,
+          title: `Bab ${i + 1}`,
+          page: Math.max(1, Math.floor((i / chapterCount) * totalPages) + 1),
+        }));
+      })();
 
   const handleChapterSelect = useCallback(
     (page: number) => {
@@ -251,6 +259,7 @@ export default function BookReaderPage({
           totalPages={totalPages}
           onPageChange={handlePageChange}
           onReady={handleReaderReady}
+          onChaptersLoaded={handleChaptersLoaded}
           showUI={showUI}
         />
       </div>
