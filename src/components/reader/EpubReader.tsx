@@ -120,21 +120,6 @@ export default function EpubReader({
         'application/xhtml+xml'
       );
 
-      // ── Resolve images: <img src="..."> → blob URLs ──
-      const imgs = doc.querySelectorAll('img');
-      for (const img of Array.from(imgs)) {
-        const src = img.getAttribute('src');
-        if (!src || src.startsWith('data:') || src.startsWith('blob:')) continue;
-
-        const fullPath = resolveEpubPath(opfDir + currentChapter!.href.replace(opfDir, ''), src);
-        const file = zip.file(fullPath);
-        if (file) {
-          const blob = await file.async('blob');
-          if (cancelled) return;
-          img.setAttribute('src', URL.createObjectURL(blob));
-        }
-      }
-
       // ── Resolve inline stylesheets: <link rel="stylesheet"> → <style> ──
       const links = doc.querySelectorAll('link[rel="stylesheet"]');
       for (const link of Array.from(links)) {
@@ -152,32 +137,90 @@ export default function EpubReader({
         }
       }
 
-      // ── Apply reader styles + rendered content ──
+      // ── Resolve images inside <picture> elements ──
+      // Many EPUBs have <picture><source.../><img/></picture> — browser renders both.
+      // Flatten: keep only the best <img>, remove <source> tags.
+      const pictures = doc.querySelectorAll('picture');
+      for (const picture of Array.from(pictures)) {
+        const imgs = picture.querySelectorAll('img');
+        if (imgs.length > 1) {
+          // Keep only the last (usually highest-res) img, remove others
+          for (let i = 0; i < imgs.length - 1; i++) {
+            imgs[i].remove();
+          }
+        }
+        // Unwrap <picture> → keep just the <img>
+        const img = picture.querySelector('img');
+        if (img) {
+          picture.parentNode?.replaceChild(img, picture);
+        }
+      }
+
+      // ── Deduplicate images inside <figure> ──
+      // Some EPUBs put both a hero image and thumbnail in <figure>
+      const figures = doc.querySelectorAll('figure');
+      for (const figure of Array.from(figures)) {
+        const imgs = figure.querySelectorAll('img');
+        if (imgs.length > 1) {
+          // Keep only the largest (by attribute hints or first one)
+          for (let i = 1; i < imgs.length; i++) {
+            imgs[i].remove();
+          }
+        }
+      }
+
+      // ── Resolve remaining images from ZIP ──
+      const allImgs = doc.querySelectorAll('img');
+      for (const img of Array.from(allImgs)) {
+        const src = img.getAttribute('src');
+        if (!src || src.startsWith('data:') || src.startsWith('blob:')) continue;
+
+        const fullPath = resolveEpubPath(opfDir + currentChapter!.href.replace(opfDir, ''), src);
+        const file = zip.file(fullPath);
+        if (file) {
+          const blob = await file.async('blob');
+          if (cancelled) return;
+          img.setAttribute('src', URL.createObjectURL(blob));
+        }
+      }
+
+      // ── Apply reader styles (BEFORE EPUB content so EPUB CSS overrides) ──
+      // Only override user-facing settings, preserve book's layout/spacing
       const style = document.createElement('style');
       style.textContent = `
+        /* Reader overrides — only user-configurable settings */
         body {
-          margin: 0;
-          padding: 0;
-          font-family: ${fontFamilyMap[settings.fontFamily] || '"Literata", serif'};
-          font-size: ${settings.fontSize}px;
-          line-height: ${settings.lineHeight};
+          font-family: ${fontFamilyMap[settings.fontFamily] || '"Literata", serif'} !important;
+          font-size: ${settings.fontSize}px !important;
+          line-height: ${settings.lineHeight} !important;
           color: ${themeFgMap[settings.theme] || '#1a1a1a'};
           word-wrap: break-word;
           overflow-wrap: break-word;
         }
-        p { margin: 0 0 1em 0; text-align: justify; }
-        h1, h2, h3, h4 { margin: 1em 0 0.5em 0; }
-        img { max-width: 100%; height: auto; display: block; margin: 1em auto; }
-        a { color: #059669; }
+        /* Preserve book's paragraph styling — only add base spacing if none exists */
+        p { min-height: 1em; }
+        /* Images: responsive, centered, with breathing room */
+        img { max-width: 100%; height: auto; display: block; margin: 0.5em auto; }
+        /* SVGs: scale to container */
         svg { max-width: 100%; height: auto; }
-        table { max-width: 100%; border-collapse: collapse; margin: 1em 0; }
-        td, th { border: 1px solid #ccc; padding: 0.3em 0.6em; }
+        /* Tables: readable */
+        table { max-width: 100%; border-collapse: collapse; margin: 0.5em 0; }
+        td, th { padding: 0.2em 0.5em; }
+        /* Links: brand color */
+        a { color: #059669; }
+        /* Figures: proper layout */
+        figure { margin: 1em 0; text-align: center; }
+        figcaption { font-size: 0.85em; opacity: 0.7; margin-top: 0.3em; }
+        /* Blockquotes: styled */
+        blockquote { border-left: 3px solid #059669; padding-left: 1em; margin: 0.5em 0; opacity: 0.8; }
+        /* Lists: spacing */
+        ul, ol { padding-left: 1.5em; margin: 0.5em 0; }
       `;
 
       // Clear previous content
       contentRef.current!.innerHTML = '';
 
-      // Inject styles and content
+      // Build wrapper: styles FIRST (EPUB CSS overrides ours), then content
       const body = doc.querySelector('body');
       const content = body ? body.innerHTML : doc.documentElement.innerHTML;
 
