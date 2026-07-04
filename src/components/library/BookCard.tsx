@@ -49,12 +49,18 @@ export default function BookCard({ book, progress, onDelete }: BookCardProps) {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (window.confirm(`Hapus "${book.title}"?`)) {
-                  onDelete(book.id);
-                  gooeyToast.success('Buku dihapus', {
-                    description: `"${book.title}" sudah dihapus dari perpustakaan.`,
-                  });
-                }
+                gooeyToast.error(`Hapus "${book.title}"?`, {
+                  description: 'Buku akan dihapus dari perpustakaan.',
+                  action: {
+                    label: 'Hapus',
+                    onClick: () => {
+                      onDelete(book.id);
+                      gooeyToast.success('Buku dihapus', {
+                        description: `"${book.title}" sudah dihapus.`,
+                      });
+                    },
+                  },
+                });
               }}
               className="absolute top-2 left-2 rounded bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-600 backdrop-blur-sm"
               title="Hapus buku"

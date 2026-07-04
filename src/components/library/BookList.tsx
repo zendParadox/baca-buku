@@ -93,12 +93,18 @@ export default function BookList({ book, progress, onDelete }: BookListProps) {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              if (window.confirm(`Hapus "${book.title}"?`)) {
-                onDelete(book.id);
-                gooeyToast.success('Buku dihapus', {
-                  description: `"${book.title}" sudah dihapus dari perpustakaan.`,
-                });
-              }
+              gooeyToast.error(`Hapus "${book.title}"?`, {
+                description: 'Buku akan dihapus dari perpustakaan.',
+                action: {
+                  label: 'Hapus',
+                  onClick: () => {
+                    onDelete(book.id);
+                    gooeyToast.success('Buku dihapus', {
+                      description: `"${book.title}" sudah dihapus.`,
+                    });
+                  },
+                },
+              });
             }}
             className="shrink-0 rounded p-1.5 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"
             title="Hapus buku"
