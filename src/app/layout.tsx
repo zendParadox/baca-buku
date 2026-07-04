@@ -9,6 +9,8 @@ import {
   Source_Serif_4,
 } from "next/font/google";
 import "./globals.css";
+import 'goey-toast/styles.css';
+import Providers from '@/components/Providers';
 
 // UI fonts
 const geistSans = Geist({
@@ -109,7 +111,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-screen flex flex-col">{children}</body>
+      <body className="min-h-screen flex flex-col"><Providers>{children}</Providers></body>
     </html>
   );
 }

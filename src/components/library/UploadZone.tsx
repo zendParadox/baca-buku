@@ -1,41 +1,40 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { Upload, CloudUpload, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Upload, CloudUpload, Loader2 } from 'lucide-react';
+import { gooeyToast } from 'goey-toast';
 import { addBook } from '@/lib/db';
 import type { Book } from '@/types';
 
 const MAX_SIZE = 50 * 1024 * 1024; // 50MB
 const ACCEPTED = '.pdf,.epub';
 
-interface UploadStatus {
-  state: 'idle' | 'uploading' | 'done' | 'error';
-  message: string;
-  fileName?: string;
-}
-
 interface Props {
   onUploadComplete?: (book: Book) => void;
 }
 
 export default function UploadZone({ onUploadComplete }: Props) {
+  const [isUploading, setIsUploading] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
-  const [status, setStatus] = useState<UploadStatus>({ state: 'idle', message: '' });
   const inputRef = useRef<HTMLInputElement>(null);
 
   const processFile = useCallback(async (file: File) => {
     if (file.size > MAX_SIZE) {
-      setStatus({ state: 'error', message: 'Ukuran file melebihi 50MB' });
+      gooeyToast.error('File terlalu besar', {
+        description: 'Ukuran file melebihi 50MB.',
+      });
       return;
     }
 
     const ext = file.name.split('.').pop()?.toLowerCase();
     if (ext !== 'pdf' && ext !== 'epub') {
-      setStatus({ state: 'error', message: 'Format file tidak didukung. Gunakan PDF atau EPUB.' });
+      gooeyToast.error('Format tidak didukung', {
+        description: 'Gunakan file PDF atau EPUB.',
+      });
       return;
     }
 
-    setStatus({ state: 'uploading', message: 'Memproses file...', fileName: file.name });
+    setIsUploading(true);
 
     try {
       const format = ext === 'pdf' ? 'pdf' : 'epub';
@@ -52,7 +51,6 @@ export default function UploadZone({ onUploadComplete }: Props) {
           const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
           totalPages = pdf.numPages;
 
-          // Try to extract metadata
           const metadata = await pdf.getMetadata();
           if (metadata?.info) {
             const info = metadata.info as Record<string, string>;
@@ -60,7 +58,6 @@ export default function UploadZone({ onUploadComplete }: Props) {
             if (info.Author) author = info.Author;
           }
 
-          // Render first page as cover
           const page = await pdf.getPage(1);
           const viewport = page.getViewport({ scale: 0.5 });
           const canvas = document.createElement('canvas');
@@ -73,7 +70,6 @@ export default function UploadZone({ onUploadComplete }: Props) {
             cover = canvas.toDataURL('image/jpeg', 0.7);
           }
         } catch {
-          // pdf.js might not be installed, proceed with defaults
           console.warn('pdf.js not available, using defaults');
         }
       } else {
@@ -91,7 +87,6 @@ export default function UploadZone({ onUploadComplete }: Props) {
             if (metadata.creator) author = metadata.creator;
           }
 
-          // Get cover
           const coverUrl = await epubBook.coverUrl();
           if (coverUrl) cover = coverUrl;
 
@@ -106,9 +101,6 @@ export default function UploadZone({ onUploadComplete }: Props) {
         }
       }
 
-      // Convert File to ArrayBuffer for reliable storage/retrieval
-      // This ensures epub.js and pdf.js receive raw ArrayBuffers
-      // without Blob→ArrayBuffer conversion issues in IndexedDB
       const fileBuffer = await file.arrayBuffer();
 
       const book: Book = {
@@ -124,14 +116,19 @@ export default function UploadZone({ onUploadComplete }: Props) {
       };
 
       await addBook(book);
-      setStatus({ state: 'done', message: 'Buku berhasil ditambahkan!', fileName: file.name });
-      onUploadComplete?.(book);
 
-      // Reset after delay
-      setTimeout(() => setStatus({ state: 'idle', message: '' }), 3000);
+      gooeyToast.success('Buku ditambahkan!', {
+        description: `"${title}" sudah ada di perpustakaan.`,
+      });
+
+      onUploadComplete?.(book);
     } catch (err) {
       console.error('Upload error:', err);
-      setStatus({ state: 'error', message: 'Gagal memproses file' });
+      gooeyToast.error('Gagal memproses file', {
+        description: 'Terjadi kesalahan saat membaca file.',
+      });
+    } finally {
+      setIsUploading(false);
     }
   }, [onUploadComplete]);
 
@@ -167,7 +164,7 @@ export default function UploadZone({ onUploadComplete }: Props) {
         onDrop={onDrop}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
-        onClick={() => inputRef.current?.click()}
+        onClick={() => !isUploading && inputRef.current?.click()}
         className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 transition-all duration-200 ${
           isDragActive
             ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20'
@@ -182,26 +179,10 @@ export default function UploadZone({ onUploadComplete }: Props) {
           className="hidden"
         />
 
-        {status.state === 'uploading' ? (
+        {isUploading ? (
           <>
             <Loader2 className="h-10 w-10 animate-spin text-emerald-500" />
-            <p className="text-sm text-zinc-600 dark:text-zinc-300">{status.message}</p>
-            {status.fileName && (
-              <p className="max-w-full truncate text-xs text-stone-500 dark:text-zinc-400">{status.fileName}</p>
-            )}
-          </>
-        ) : status.state === 'done' ? (
-          <>
-            <CheckCircle2 className="h-10 w-10 text-emerald-500" />
-            <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
-              {status.message}
-            </p>
-          </>
-        ) : status.state === 'error' ? (
-          <>
-            <AlertCircle className="h-10 w-10 text-red-500" />
-            <p className="text-sm text-red-600 dark:text-red-400">{status.message}</p>
-            <p className="text-xs text-stone-500 dark:text-zinc-400">Klik untuk mencoba lagi</p>
+            <p className="text-sm text-stone-600 dark:text-zinc-300">Memproses file...</p>
           </>
         ) : (
           <>
@@ -211,7 +192,7 @@ export default function UploadZone({ onUploadComplete }: Props) {
               <Upload className="h-10 w-10 text-stone-400 dark:text-zinc-500" />
             )}
             <div className="text-center">
-              <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <p className="text-sm font-medium text-stone-700 dark:text-zinc-300">
                 {isDragActive ? 'Lepaskan file di sini' : 'Seret & lepas buku ke sini'}
               </p>
               <p className="mt-1 text-xs text-stone-500 dark:text-zinc-400">

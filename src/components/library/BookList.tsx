@@ -5,6 +5,7 @@ import { Book as BookIcon, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
+import { gooeyToast } from 'goey-toast';
 
 interface BookListProps {
   book: Book;
@@ -94,6 +95,9 @@ export default function BookList({ book, progress, onDelete }: BookListProps) {
               e.stopPropagation();
               if (window.confirm(`Hapus "${book.title}"?`)) {
                 onDelete(book.id);
+                gooeyToast.success('Buku dihapus', {
+                  description: `"${book.title}" sudah dihapus dari perpustakaan.`,
+                });
               }
             }}
             className="shrink-0 rounded p-1.5 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20"

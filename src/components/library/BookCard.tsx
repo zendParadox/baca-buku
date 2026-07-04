@@ -5,6 +5,7 @@ import { Book as BookIcon, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
+import { gooeyToast } from 'goey-toast';
 
 interface BookCardProps {
   book: Book;
@@ -50,6 +51,9 @@ export default function BookCard({ book, progress, onDelete }: BookCardProps) {
                 e.stopPropagation();
                 if (window.confirm(`Hapus "${book.title}"?`)) {
                   onDelete(book.id);
+                  gooeyToast.success('Buku dihapus', {
+                    description: `"${book.title}" sudah dihapus dari perpustakaan.`,
+                  });
                 }
               }}
               className="absolute top-2 left-2 rounded bg-black/60 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-600 backdrop-blur-sm"
