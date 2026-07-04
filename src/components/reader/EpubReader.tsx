@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { Book, ReaderSettings } from '@/types';
-import { parseEpub, type ParsedEpub, type EpubChapter } from '@/lib/epub-parser';
+import { parseEpub, type ParsedEpub, type EpubChapter, resolveEpubPath } from '@/lib/epub-parser';
+import type JSZip from 'jszip';
 
 export interface ChapterInfo {
   id: string;
@@ -106,45 +107,92 @@ export default function EpubReader({
 
   // Render chapter HTML into the content div
   useEffect(() => {
-    if (!contentRef.current || !currentChapter) return;
+    if (!contentRef.current || !currentChapter || !epubData) return;
 
-    // Parse the chapter's XHTML content
-    const doc = new DOMParser().parseFromString(
-      currentChapter.content,
-      'application/xhtml+xml'
-    );
+    let cancelled = false;
 
-    // Apply custom styles to the content
-    const style = document.createElement('style');
-    style.textContent = `
-      body {
-        margin: 0;
-        padding: 0;
-        font-family: ${fontFamilyMap[settings.fontFamily] || '"Literata", serif'};
-        font-size: ${settings.fontSize}px;
-        line-height: ${settings.lineHeight};
-        color: ${themeFgMap[settings.theme] || '#1a1a1a'};
-        word-wrap: break-word;
-        overflow-wrap: break-word;
+    async function renderChapter() {
+      const { zip, opfDir } = epubData!;
+
+      // Parse the chapter's XHTML content
+      const doc = new DOMParser().parseFromString(
+        currentChapter!.content,
+        'application/xhtml+xml'
+      );
+
+      // ── Resolve images: <img src="..."> → blob URLs ──
+      const imgs = doc.querySelectorAll('img');
+      for (const img of Array.from(imgs)) {
+        const src = img.getAttribute('src');
+        if (!src || src.startsWith('data:') || src.startsWith('blob:')) continue;
+
+        const fullPath = resolveEpubPath(opfDir + currentChapter!.href.replace(opfDir, ''), src);
+        const file = zip.file(fullPath);
+        if (file) {
+          const blob = await file.async('blob');
+          if (cancelled) return;
+          img.setAttribute('src', URL.createObjectURL(blob));
+        }
       }
-      p { margin: 0 0 1em 0; text-align: justify; }
-      h1, h2, h3, h4 { margin: 1em 0 0.5em 0; }
-      img { max-width: 100%; height: auto; }
-      a { color: #6366f1; }
-    `;
 
-    // Clear previous content
-    contentRef.current.innerHTML = '';
+      // ── Resolve inline stylesheets: <link rel="stylesheet"> → <style> ──
+      const links = doc.querySelectorAll('link[rel="stylesheet"]');
+      for (const link of Array.from(links)) {
+        const href = link.getAttribute('href');
+        if (!href) continue;
 
-    // Inject styles and content
-    const body = doc.querySelector('body');
-    const content = body ? body.innerHTML : doc.documentElement.innerHTML;
+        const fullPath = resolveEpubPath(opfDir + currentChapter!.href.replace(opfDir, ''), href);
+        const file = zip.file(fullPath);
+        if (file) {
+          const css = await file.async('text');
+          if (cancelled) return;
+          const style = doc.createElement('style');
+          style.textContent = css;
+          link.parentNode?.replaceChild(style, link);
+        }
+      }
 
-    const wrapper = document.createElement('div');
-    wrapper.appendChild(style);
-    wrapper.innerHTML += content;
-    contentRef.current.appendChild(wrapper);
-  }, [currentChapter, settings]);
+      // ── Apply reader styles + rendered content ──
+      const style = document.createElement('style');
+      style.textContent = `
+        body {
+          margin: 0;
+          padding: 0;
+          font-family: ${fontFamilyMap[settings.fontFamily] || '"Literata", serif'};
+          font-size: ${settings.fontSize}px;
+          line-height: ${settings.lineHeight};
+          color: ${themeFgMap[settings.theme] || '#1a1a1a'};
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+        }
+        p { margin: 0 0 1em 0; text-align: justify; }
+        h1, h2, h3, h4 { margin: 1em 0 0.5em 0; }
+        img { max-width: 100%; height: auto; display: block; margin: 1em auto; }
+        a { color: #059669; }
+        svg { max-width: 100%; height: auto; }
+        table { max-width: 100%; border-collapse: collapse; margin: 1em 0; }
+        td, th { border: 1px solid #ccc; padding: 0.3em 0.6em; }
+      `;
+
+      // Clear previous content
+      contentRef.current!.innerHTML = '';
+
+      // Inject styles and content
+      const body = doc.querySelector('body');
+      const content = body ? body.innerHTML : doc.documentElement.innerHTML;
+
+      const wrapper = document.createElement('div');
+      wrapper.appendChild(style);
+      wrapper.innerHTML += content;
+      contentRef.current!.appendChild(wrapper);
+    }
+
+    renderChapter();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentChapter, settings, epubData]);
 
   // Loading state
   if (loading) {

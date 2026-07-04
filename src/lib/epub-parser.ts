@@ -6,7 +6,7 @@
  * parses container.xml + OPF, and renders XHTML chapters.
  */
 
-import * as JSZip from 'jszip';
+import JSZip from 'jszip';
 
 export interface EpubChapter {
   id: string;
@@ -25,6 +25,10 @@ export interface ParsedEpub {
   metadata: EpubMetadata;
   chapters: EpubChapter[];
   coverUrl: string | null;
+  /** Raw ZIP — kept alive so the reader can resolve images/CSS on demand. */
+  zip: JSZip;
+  /** Base directory inside the ZIP where OPF content lives (e.g. "OEBPS/"). */
+  opfDir: string;
 }
 
 /**
@@ -114,7 +118,7 @@ export async function parseEpub(arrayBuffer: ArrayBuffer): Promise<ParsedEpub> {
     }
   }
 
-  return { metadata, chapters: spineItems, coverUrl };
+  return { metadata, chapters: spineItems, coverUrl, zip, opfDir };
 }
 
 /**
